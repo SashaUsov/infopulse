@@ -1,20 +1,24 @@
 package connectPool;
 
 import exc.ConnectionPoolIsEmptyException;
+import lombok.SneakyThrows;
 
 import java.sql.*;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.Date;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 public class ConnectionPool {
-    private BlockingQueue<Connection> connectionsPool = new LinkedBlockingDeque<>();
+    private BlockingQueue<ConnectionHolder> connectionsPool = new LinkedBlockingDeque<>();
     private int pollSize;
+    private long connectionTimeoutInThePool;
 
-    public ConnectionPool(int pollSize) {
+    public ConnectionPool(int pollSize, long connectionTimeoutInThePool) {
         this.pollSize = pollSize;
+        this.connectionTimeoutInThePool = connectionTimeoutInThePool;
         try {
             createConnectionAndFillThePool();
         } catch (SQLException | ClassNotFoundException e) {
@@ -22,10 +26,11 @@ public class ConnectionPool {
         }
     }
 
+    @SneakyThrows
     public  Connection getConnection() {
-        final JdbcConnection jdbcConnection = new JdbcConnection(connectionsPool.poll());
-        if (jdbcConnection.connection != null) {
-            return jdbcConnection;
+        final ConnectionHolder connectionHolder = connectionsPool.poll(connectionTimeoutInThePool, TimeUnit.SECONDS);
+        if (connectionHolder != null) {
+            return new JdbcConnection(connectionHolder.getConnection());
         } else {
             throw new ConnectionPoolIsEmptyException("Connection pool is empty!");
         }
@@ -33,7 +38,9 @@ public class ConnectionPool {
 
     private void createConnectionAndFillThePool() throws SQLException, ClassNotFoundException {
         for (int i = 0; i < pollSize; i++) {
-            connectionsPool.add(createAndGetConnection());
+            final Connection connection = createAndGetConnection();
+            Date connectionCreationTime = new Date();
+            connectionsPool.add(new ConnectionHolder(connection, connectionCreationTime));
         }
     }
 
@@ -72,7 +79,7 @@ public class ConnectionPool {
 
         @Override
         public void close() throws SQLException {
-            connectionsPool.add(connection);
+            connectionsPool.add(new ConnectionHolder(connection, new Date()));
             connection = null;
         }
 

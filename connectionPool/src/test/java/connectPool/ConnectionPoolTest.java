@@ -1,6 +1,7 @@
 package connectPool;
 
 import exc.ConnectionPoolIsEmptyException;
+import lombok.SneakyThrows;
 import org.junit.Test;
 
 import java.sql.Connection;
@@ -16,7 +17,8 @@ import static org.junit.Assert.assertNotNull;
 public class ConnectionPoolTest {
 
     @Test(expected = NullPointerException.class)
-    public void shouldThrowNullPointerExceptionAfterConnectionClosed() throws SQLException {
+    @SneakyThrows
+    public void shouldThrowNullPointerExceptionAfterConnectionClosed() {
         ConnectionPool connectionPool = new ConnectionPool(1);
         final Connection connectionOne = connectionPool.getConnection();
         connectionOne.close();
@@ -24,6 +26,7 @@ public class ConnectionPoolTest {
     }
 
     @Test
+    @SneakyThrows
     public void shouldCreateAndGetOneConnection() {
         ConnectionPool connectionPool =  new ConnectionPool(1);
         final Connection connection = connectionPool.getConnection();
@@ -32,6 +35,7 @@ public class ConnectionPoolTest {
     }
 
     @Test(expected = ConnectionPoolIsEmptyException.class)
+    @SneakyThrows
     public void shouldThrowConnectionPoolIsEmptyExceptionOnTheSecondConnectionRequest() {
         ConnectionPool connectionPool =  new ConnectionPool(1);
         final Connection connectionOne = connectionPool.getConnection();
@@ -39,6 +43,7 @@ public class ConnectionPoolTest {
     }
 
     @Test
+    @SneakyThrows
     public void connectionShouldBeNotEquals(){
         ConnectionPool connectionPool =  new ConnectionPool(2);
         final Connection connectionOne = connectionPool.getConnection();
@@ -48,7 +53,8 @@ public class ConnectionPoolTest {
     }
 
     @Test(expected = ConnectionPoolIsEmptyException.class)
-    public void shouldGetConnectionInMultiThreaded() throws Throwable {
+    @SneakyThrows
+    public void shouldThrowsConnectionPoolIsEmptyExceptionInMultiThreaded() {
         ConnectionPool connectionPool =  new ConnectionPool(2);
 
         try {
@@ -64,6 +70,7 @@ public class ConnectionPoolTest {
                 System.out.println(connectionPool.getConnection());
             });
 
+            executorService.shutdown();
             submit.get();
             submit1.get();
             submit2.get();
