@@ -5,7 +5,6 @@ import lombok.SneakyThrows;
 import org.junit.Test;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,7 +18,7 @@ public class ConnectionPoolTest {
     @Test(expected = NullPointerException.class)
     @SneakyThrows
     public void shouldThrowNullPointerExceptionAfterConnectionClosed() {
-        ConnectionPool connectionPool = new ConnectionPool(1);
+        ConnectionPool connectionPool = new ConnectionPool(1, 5);
         final Connection connectionOne = connectionPool.getConnection();
         connectionOne.close();
         connectionOne.setSavepoint();
@@ -28,7 +27,7 @@ public class ConnectionPoolTest {
     @Test
     @SneakyThrows
     public void shouldCreateAndGetOneConnection() {
-        ConnectionPool connectionPool =  new ConnectionPool(1);
+        ConnectionPool connectionPool =  new ConnectionPool(1, 5);
         final Connection connection = connectionPool.getConnection();
 
         assertNotNull(connection);
@@ -37,7 +36,7 @@ public class ConnectionPoolTest {
     @Test(expected = ConnectionPoolIsEmptyException.class)
     @SneakyThrows
     public void shouldThrowConnectionPoolIsEmptyExceptionOnTheSecondConnectionRequest() {
-        ConnectionPool connectionPool =  new ConnectionPool(1);
+        ConnectionPool connectionPool =  new ConnectionPool(1, 5);
         final Connection connectionOne = connectionPool.getConnection();
         final Connection connectionTwo = connectionPool.getConnection();
     }
@@ -45,7 +44,7 @@ public class ConnectionPoolTest {
     @Test
     @SneakyThrows
     public void connectionShouldBeNotEquals(){
-        ConnectionPool connectionPool =  new ConnectionPool(2);
+        ConnectionPool connectionPool =  new ConnectionPool(2, 5);
         final Connection connectionOne = connectionPool.getConnection();
         final Connection connectionTwo = connectionPool.getConnection();
 
@@ -55,7 +54,7 @@ public class ConnectionPoolTest {
     @Test(expected = ConnectionPoolIsEmptyException.class)
     @SneakyThrows
     public void shouldThrowsConnectionPoolIsEmptyExceptionInMultiThreaded() {
-        ConnectionPool connectionPool =  new ConnectionPool(2);
+        ConnectionPool connectionPool =  new ConnectionPool(2, 5);
 
         try {
 

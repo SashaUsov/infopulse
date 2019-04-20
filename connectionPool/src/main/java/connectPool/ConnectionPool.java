@@ -15,10 +15,11 @@ public class ConnectionPool {
     private BlockingQueue<ConnectionHolder> connectionsPool = new LinkedBlockingDeque<>();
     private int pollSize;
     private long connectionTimeoutInThePool;
+    private int usedConnections;
 
-    public ConnectionPool(int pollSize, long connectionTimeoutInThePool) {
+    public ConnectionPool(int pollSize, long connectionTimeoutInSecond) {
         this.pollSize = pollSize;
-        this.connectionTimeoutInThePool = connectionTimeoutInThePool;
+        this.connectionTimeoutInThePool = connectionTimeoutInSecond;
         try {
             createConnectionAndFillThePool();
         } catch (SQLException | ClassNotFoundException e) {
@@ -28,12 +29,21 @@ public class ConnectionPool {
 
     @SneakyThrows
     public  Connection getConnection() {
-        final ConnectionHolder connectionHolder = connectionsPool.poll(connectionTimeoutInThePool, TimeUnit.SECONDS);
-        if (connectionHolder != null) {
-            return new JdbcConnection(connectionHolder.getConnection());
-        } else {
+        if (pollSize == usedConnections) {
             throw new ConnectionPoolIsEmptyException("Connection pool is empty!");
+        } else if (connectionsPool.isEmpty() && usedConnections < pollSize) {
+            usedConnections++;
+            return new JdbcConnection(createAndGetConnection());
+        } else {
+            return getPendingConnection();
         }
+    }
+
+    private Connection getPendingConnection() throws InterruptedException {
+        final ConnectionHolder connectionHolder = connectionsPool.poll(connectionTimeoutInThePool, TimeUnit.SECONDS);
+            usedConnections++;
+            return new JdbcConnection(connectionHolder.getConnection());
+
     }
 
     private void createConnectionAndFillThePool() throws SQLException, ClassNotFoundException {
@@ -79,6 +89,7 @@ public class ConnectionPool {
 
         @Override
         public void close() throws SQLException {
+            usedConnections--;
             connectionsPool.add(new ConnectionHolder(connection, new Date()));
             connection = null;
         }
