@@ -89,6 +89,10 @@ public class ConnectionPool {
 
         @Override
         public void close() throws SQLException {
+            if (connectionsPool.size() == pollSize) {
+                usedConnections--;
+                connection.close();
+            }
             usedConnections--;
             connectionsPool.add(new ConnectionHolder(connection, new Date()));
             connection = null;
