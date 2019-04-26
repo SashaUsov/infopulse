@@ -1,5 +1,6 @@
 package connectPool;
 
+import connectionMonitoring.ConnectionUsageMonitoring;
 import exc.ConnectionPoolIsEmptyException;
 import lombok.SneakyThrows;
 
@@ -25,6 +26,12 @@ public class ConnectionPool {
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
         }
+        ConnectionUsageMonitoring connectionUsageMonitoring = new ConnectionUsageMonitoring(this.connectionsPool);
+        connectionUsageMonitoring.run();
+    }
+
+    public int getCurrentSize() {
+        return connectionsPool.size();
     }
 
     @SneakyThrows

@@ -5,7 +5,6 @@ import connectPool.ConnectionHolder;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
@@ -47,15 +46,17 @@ public class ConnectionUsageMonitoring {
     private void closeUnusedConnection(Iterator<ConnectionHolder> iterator) throws SQLException {
         if (iterator.hasNext()) {
             final ConnectionHolder connectionHolder = iterator.next();
-            if (!canTheConnectionStillWait(connectionHolder.getLastAccessTime())) {
+            if (connectionTimeout(connectionHolder.getLastAccessTime())) {
                 iterator.remove();
                 connectionHolder.getConnection().close();
             }
         }
     }
 
-    private boolean canTheConnectionStillWait(Date lastAccessTime) {
-        return Duration.between(lastAccessTime.toInstant(), Instant.now()).get(ChronoUnit.MILLIS) > 10000;
+    private boolean connectionTimeout(Date lastAccessTime) {
+        final long l = Duration.between(lastAccessTime.toInstant(), Instant.now()).toMillis();//.get(ChronoUnit.MILLIS);
+        return l > 2000;
+                //Duration.between(lastAccessTime.toInstant(), Instant.now()).get(ChronoUnit.MILLIS) > 1000;
     }
 
 }

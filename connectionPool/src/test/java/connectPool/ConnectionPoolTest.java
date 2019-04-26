@@ -12,6 +12,7 @@ import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class ConnectionPoolTest {
 
@@ -77,5 +78,57 @@ public class ConnectionPoolTest {
             e.printStackTrace();
             throw e.getCause();
         }
+    }
+
+    @SneakyThrows
+    @Test
+    public void shouldCloseUnusedConnectionsAndMakeConnectionPoolEmpty() {
+        ConnectionPool connectionPool =  new ConnectionPool(3, 5);
+        final Connection connectionOne = connectionPool.getConnection();
+
+        Thread.sleep(2500);
+
+        connectionOne.close();
+
+        assertTrue(connectionPool.getCurrentSize() == 1);
+    }
+
+    @SneakyThrows
+    @Test
+    public void shouldNotCloseUnusedConnectionsInConnectionPoolWaitingTimeNotExceeded() {
+        ConnectionPool connectionPool =  new ConnectionPool(3, 5);
+        final Connection connectionOne = connectionPool.getConnection();
+
+        Thread.sleep(500);
+
+        connectionOne.close();
+
+        assertTrue(connectionPool.getCurrentSize() == 3);
+    }
+
+    @SneakyThrows
+    @Test
+    public void shouldReturnConnectionAfterConnectionPoolClearsTheConnectionMonitor() {
+        ConnectionPool connectionPool =  new ConnectionPool(3, 5);
+        final Connection connectionOne = connectionPool.getConnection();
+
+        Thread.sleep(2500);
+
+        final Connection connectionTwo = connectionPool.getConnection();
+
+        assertNotNull(connectionTwo);
+    }
+
+    @SneakyThrows
+    @Test(expected = ConnectionPoolIsEmptyException.class)
+    public void shouldThrowNullPointerExceptionAfterClearingConnectionPoolAndRequestingAnExcessiveConnection() {
+        ConnectionPool connectionPool =  new ConnectionPool(2, 5);
+
+        Thread.sleep(2500);
+
+        final Connection connectionOne = connectionPool.getConnection();
+        final Connection connectionTwo = connectionPool.getConnection();
+        final Connection excessConnection = connectionPool.getConnection();
+
     }
 }
