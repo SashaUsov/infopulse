@@ -90,7 +90,7 @@ public class ConnectionPoolTest {
 
         connectionOne.close();
 
-        assertTrue(connectionPool.getCurrentSize() == 1);
+        assertTrue(connectionPool.getCurrentPoolSize() == 1);
     }
 
     @SneakyThrows
@@ -103,7 +103,7 @@ public class ConnectionPoolTest {
 
         connectionOne.close();
 
-        assertTrue(connectionPool.getCurrentSize() == 3);
+        assertTrue(connectionPool.getCurrentPoolSize() == 3);
     }
 
     @SneakyThrows

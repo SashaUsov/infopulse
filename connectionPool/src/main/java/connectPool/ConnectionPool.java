@@ -30,7 +30,7 @@ public class ConnectionPool {
         connectionUsageMonitoring.run();
     }
 
-    public int getCurrentSize() {
+    public int getCurrentPoolSize() {
         return connectionsPool.size();
     }
 
@@ -96,10 +96,26 @@ public class ConnectionPool {
 
         @Override
         public void close() throws SQLException {
-            if (connectionsPool.size() == pollSize) {
-                usedConnections--;
+            if (connection.isValid(0)) {
+                closeValidConnection();
+            } else {
                 connection.close();
             }
+        }
+
+        private void closeValidConnection() throws SQLException {
+            if (getCurrentPoolSize() == pollSize) {
+                closeConnectionIfPoolFull();
+            }
+            putUserConnectionToThePool();
+        }
+
+        private void closeConnectionIfPoolFull() throws SQLException {
+            usedConnections--;
+            connection.close();
+        }
+
+        private void putUserConnectionToThePool() {
             usedConnections--;
             connectionsPool.add(new ConnectionHolder(connection, new Date()));
             connection = null;
