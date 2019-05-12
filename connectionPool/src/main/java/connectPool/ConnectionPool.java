@@ -41,11 +41,11 @@ public class ConnectionPool {
         return connectionsPool.size();
     }
 
-    void decrementUsedConnections() {
+    private void decrementUsedConnections() {
         usedConnections--;
     }
 
-    void returnConnectionToThePoll(Connection connection) {
+    private void returnConnectionToThePoll(Connection connection) {
         connectionsPool.add(new ConnectionHolder(connection, new Date()));
     }
 
@@ -55,10 +55,15 @@ public class ConnectionPool {
             throw new ConnectionPoolIsEmptyException("Connection pool is empty!");
         } else if (connectionsPool.isEmpty() && usedConnections < pollSize) {
             usedConnections++;
-            return new JdbcConnection(createAndGetConnection(), this);
+            return getJdbcConnection();
         } else {
-            return getPendingConnection();
+            final Connection connection = getPendingConnection();
+            return connection.isValid( 0) ? connection : getJdbcConnection();
         }
+    }
+
+    private JdbcConnection getJdbcConnection() throws ClassNotFoundException, SQLException {
+        return new JdbcConnection(createAndGetConnection(), this);
     }
 
     private Connection getPendingConnection() throws InterruptedException {
