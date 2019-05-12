@@ -1,6 +1,5 @@
 package connectPool;
 
-import connectionMonitoring.ConnectionUsageMonitoring;
 import exc.ConnectionPoolIsEmptyException;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -10,11 +9,12 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Properties;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class ConnectionPool {
     private BlockingQueue<ConnectionHolder> connectionsPool = new LinkedBlockingDeque<>();
@@ -24,8 +24,8 @@ public class ConnectionPool {
     private int usedConnections;
     private Properties dbProps;
 
-    public ConnectionPool(int pollSize, long connectionTimeoutInSecond) {
-        this.pollSize = pollSize;
+    public ConnectionPool(int poolSize, long connectionTimeoutInSecond) {
+        this.pollSize = poolSize;
         this.connectionTimeoutInThePool = connectionTimeoutInSecond;
         try {
             createConnectionAndFillThePool();
@@ -33,7 +33,7 @@ public class ConnectionPool {
             e.printStackTrace();
         }
 
-        ConnectionUsageMonitoring connectionUsageMonitoring = new ConnectionUsageMonitoring(this.connectionsPool);
+        ConnectionUsageMonitoring connectionUsageMonitoring = new ConnectionUsageMonitoring();
         connectionUsageMonitoring.run();
     }
 
@@ -41,11 +41,7 @@ public class ConnectionPool {
         return connectionsPool.size();
     }
 
-    private void decrementUsedConnections() {
-        usedConnections--;
-    }
-
-    private void returnConnectionToThePoll(Connection connection) {
+    private void returnConnectionToThePool(Connection connection) {
         connectionsPool.add(new ConnectionHolder(connection, new Date()));
     }
 
@@ -129,12 +125,54 @@ public class ConnectionPool {
     }
 
     private void closeConnectionIfPoolFull(Connection connection) throws SQLException {
-        decrementUsedConnections();
+        usedConnections--;
         connection.close();
     }
 
     private void putUserConnectionToThePool(Connection connection) {
-        decrementUsedConnections();
-        returnConnectionToThePoll(connection);
+        usedConnections--;
+        returnConnectionToThePool(connection);
+    }
+
+    private class ConnectionUsageMonitoring {
+
+        private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+
+        void run() {
+            executorService.schedule(this::cleanUpConnectionPool, 1000, TimeUnit.MILLISECONDS);
+        }
+
+        private void cleanUpConnectionPool() {
+            doWork();
+            executorService.schedule(this::cleanUpConnectionPool, 1000, TimeUnit.MICROSECONDS);
+        }
+
+        private void doWork() {
+            try {
+                startMonitoringConnectionUsage();
+            } catch (Throwable ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        private void startMonitoringConnectionUsage() throws SQLException {
+            final Iterator<ConnectionHolder> iterator = connectionsPool.iterator();
+            closeUnusedConnection(iterator);
+        }
+
+        private void closeUnusedConnection(Iterator<ConnectionHolder> iterator) throws SQLException {
+            if (iterator.hasNext()) {
+                final ConnectionHolder connectionHolder = iterator.next();
+                if (connectionTimeout(connectionHolder.getLastAccessTime())) {
+                    iterator.remove();
+                    connectionHolder.getConnection().close();
+                }
+            }
+        }
+
+        private boolean connectionTimeout(Date lastAccessTime) {
+            final long l = Duration.between(lastAccessTime.toInstant(), Instant.now()).toMillis();
+            return l > 2000;
+        }
     }
 }
