@@ -4,6 +4,9 @@ import connectionMonitoring.ConnectionUsageMonitoring;
 import exc.ConnectionPoolIsEmptyException;
 import lombok.SneakyThrows;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
@@ -17,6 +20,7 @@ public class ConnectionPool {
     private int pollSize;
     private long connectionTimeoutInThePool;
     private int usedConnections;
+    private Properties dbProps;
 
     public ConnectionPool(int pollSize, long connectionTimeoutInSecond) {
         this.pollSize = pollSize;
@@ -26,6 +30,13 @@ public class ConnectionPool {
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
         }
+
+//        try {
+//            FileInputStream in = new FileInputStream("infopulse/connectionPool/src/main/resources/db.properties");
+//            dbProps.load(in);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
         ConnectionUsageMonitoring connectionUsageMonitoring = new ConnectionUsageMonitoring(this.connectionsPool);
         connectionUsageMonitoring.run();
     }
@@ -62,10 +73,21 @@ public class ConnectionPool {
     }
 
     private Connection createAndGetConnection() throws ClassNotFoundException, SQLException {
-        Class.forName("org.postgresql.Driver");
-        String url = "jdbc:postgresql://localhost:5432/infopuls_one";
+        loadPropertyFile();
+        String driver = dbProps.getProperty("jdbc.driver");
+        Class.forName(driver);
+        String url = dbProps.getProperty("jdbc.url");
         Properties props = setAndGetDataBaseProperties();
         return getConnectionFromDriverManager(url, props);
+    }
+
+    private void loadPropertyFile() {
+        try (FileInputStream in = new FileInputStream("/Users/samsonov/IdeaProjects/infopulse/connectionPool/src/main/resources/db.properties")) {
+            dbProps  = new Properties();
+            dbProps.load(in);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private Connection getConnectionFromDriverManager(String url, Properties props) throws SQLException {
@@ -74,8 +96,10 @@ public class ConnectionPool {
 
     private Properties setAndGetDataBaseProperties() {
         Properties props = new Properties();
-        props.setProperty("user", "sasha_vosu");
-        props.setProperty("password", "1151855");
+        String username = dbProps.getProperty("jdbc.username");
+        String password = dbProps.getProperty("jdbc.password");
+        props.setProperty("user", username);
+        props.setProperty("password", password);
         props.setProperty("ssl", "false");
         return props;
     }

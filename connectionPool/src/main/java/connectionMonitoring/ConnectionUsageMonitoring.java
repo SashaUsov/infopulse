@@ -54,9 +54,8 @@ public class ConnectionUsageMonitoring {
     }
 
     private boolean connectionTimeout(Date lastAccessTime) {
-        final long l = Duration.between(lastAccessTime.toInstant(), Instant.now()).toMillis();//.get(ChronoUnit.MILLIS);
+        final long l = Duration.between(lastAccessTime.toInstant(), Instant.now()).toMillis();
         return l > 2000;
-                //Duration.between(lastAccessTime.toInstant(), Instant.now()).get(ChronoUnit.MILLIS) > 1000;
     }
 
 }
