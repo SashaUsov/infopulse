@@ -1,2 +1,4 @@
 rootProject.name = 'infopuls'
 include 'connectionPool'
+include 'reflectionHomeTask'
+
