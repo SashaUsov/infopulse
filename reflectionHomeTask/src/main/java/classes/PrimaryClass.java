@@ -5,7 +5,7 @@ import interfaces.SimpleInterface;
 public class PrimaryClass {
     private SimpleInterface imp;
 
-    public void doAction() {
-        imp.doAction();
+    public String doAction() {
+        return imp.doAction();
     }
 }

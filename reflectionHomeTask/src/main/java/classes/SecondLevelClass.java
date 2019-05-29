@@ -4,7 +4,7 @@ import interfaces.SimpleInterface;
 
 public class SecondLevelClass implements SimpleInterface {
     @Override
-    public void doAction() {
-        System.out.println("classes.SecondLevelClass injected");
+    public String doAction() {
+        return "classes.SecondLevelClass injected";
     }
 }

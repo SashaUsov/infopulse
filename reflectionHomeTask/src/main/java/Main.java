@@ -1,14 +1,15 @@
 import classes.PrimaryClass;
-import ijector.DynamicСlassInjections;
+import factory.Factory;
+
+import java.io.FileNotFoundException;
 
 public class Main {
-    public static void main(String[] args) {
-        DynamicСlassInjections dynamicСlassСreation = new DynamicСlassInjections();
+    public static void main(String[] args) throws ClassNotFoundException, FileNotFoundException, InstantiationException, IllegalAccessException {
 
-        PrimaryClass mainClass = new PrimaryClass();
+        Factory f = new Factory();
 
-        dynamicСlassСreation.injectClass(mainClass, "initFile.txt");
+        PrimaryClass prC = f.createClassFromFile("initFile.txt");
 
-        mainClass.doAction();
+        System.out.println(prC.doAction());
     }
 }
