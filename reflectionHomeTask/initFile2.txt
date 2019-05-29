@@ -1,1 +1,1 @@
-classes.PrimaryClass:interfaces.SimpleInterface:classes.SecondLevelClass
+classes.PrimaryClass:interfaces.SimpleInterface:classes.SecondsLevelClass

@@ -1,11 +1,7 @@
-package classes;
+package factory;
 
-import interfaces.SimpleInterface;
-import lombok.Getter;
-
-@Getter
-public class PrimaryClass {
-    private SimpleInterface imp;
+public class PrimaryTestClass {
+    private SimpleTestInterface imp;
 
     public String doAction() {
         return imp.doAction();
@@ -16,7 +12,7 @@ public class PrimaryClass {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        PrimaryClass that = (PrimaryClass) o;
+        PrimaryTestClass that = (PrimaryTestClass) o;
 
         return imp.equals(that.imp);
     }

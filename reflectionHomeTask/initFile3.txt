@@ -1,1 +1,1 @@
-classes.PrimaryClass:interfaces.SimpleInterface:classes.SecondLevelClass
+factory.TestClass:interfaces.SimpleInterface:classes.SecondLevelClass
